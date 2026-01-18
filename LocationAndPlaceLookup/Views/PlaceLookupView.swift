@@ -12,6 +12,8 @@ import MapKit
 struct PlaceLookupView: View {
     
     let locationManager: LocationManager
+    @Binding var selectedPlace: Place? // Pass back to previous View
+    
     @State private var searchText = ""
     @State var placeVM = PlaceViewModel()
     
@@ -23,14 +25,27 @@ struct PlaceLookupView: View {
     
     var body: some View {
         NavigationStack {
-            List(placeVM.places) { place in
-                Text(place.name)
-                    .font(.title2)
-                Text(place.address)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+            Group {
+                if searchText.isEmpty {
+                    ContentUnavailableView("No Results", systemImage: "mappin.slash")
+                } else {
+                    List(placeVM.places) { place in
+                        VStack(alignment: .leading){
+                            Text(place.name)
+                                .font(.title2)
+                            Text(place.address)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        .onTapGesture {
+                            selectedPlace = place
+                            dismiss()
+                        }
+                    }
+                    .listStyle(.plain)
+
+                }
             }
-            .listStyle(.plain)
             .navigationTitle("Location Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -40,8 +55,10 @@ struct PlaceLookupView: View {
                     }
                 }
             }
+
         }
         .searchable(text: $searchText)
+        .autocorrectionDisabled()
         .onAppear {
             // get search region when appears
             searchRegion = locationManager.getRegionAroundCurrentLocation() ?? MKCoordinateRegion()
@@ -81,5 +98,5 @@ struct PlaceLookupView: View {
 }
 
 #Preview {
-    PlaceLookupView(locationManager: LocationManager())
+    PlaceLookupView(locationManager: LocationManager(), selectedPlace: .constant(Place(mapItem: MKMapItem())))
 }
